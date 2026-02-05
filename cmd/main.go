@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	repo "github.com/nikallow/bookstores-api/internal/adapters/postgres/sqlc"
 	"github.com/nikallow/bookstores-api/internal/config"
 	"github.com/nikallow/bookstores-api/internal/inventory"
 	"github.com/nikallow/bookstores-api/internal/logger"

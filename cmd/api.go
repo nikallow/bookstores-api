@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/nikallow/bookstores-api/internal/inventory"
 	"github.com/nikallow/bookstores-api/internal/stores"
 )
 
@@ -29,6 +28,14 @@ func MountAPI(deps *APIDependencies) http.Handler {
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("OK"))
+	})
+
+	r.Route("/stores", func(r chi.Router) {
+		r.Post("/", deps.StoreHandler.CreateStore)
+		r.Get("/", deps.StoreHandler.ListStores)
+		r.Get("/{storeUUID}", deps.StoreHandler.GetStore)
+		r.Put("/{storeUUID}", deps.StoreHandler.UpdateStore)
+		r.Delete("/{storeUUID}", deps.StoreHandler.DeleteStore)
 	})
 
 	return r
