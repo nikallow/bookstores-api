@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/nikallow/bookstores-api/internal/books"
 	"github.com/nikallow/bookstores-api/internal/inventory"
+	appMiddleware "github.com/nikallow/bookstores-api/internal/middleware"
 	"github.com/nikallow/bookstores-api/internal/stores"
 )
 
@@ -24,7 +25,7 @@ func MountAPI(deps *APIDependencies) http.Handler {
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
-	r.Use(middleware.Logger)
+	r.Use(appMiddleware.NewSlogLogger(deps.Logger))
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
 
