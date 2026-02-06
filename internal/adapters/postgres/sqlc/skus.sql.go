@@ -76,6 +76,36 @@ func (q *Queries) CreateSKU(ctx context.Context, arg CreateSKUParams) (Sku, erro
 	return i, err
 }
 
+const getSKUByBookAndStore = `-- name: GetSKUByBookAndStore :one
+SELECT id, uuid, book_id, store_id, price_in_kopeks, stock_count, created_at, updated_at, deleted_at
+FROM skus
+WHERE book_id = $1
+  AND store_id = $2
+  AND deleted_at IS NULL
+`
+
+type GetSKUByBookAndStoreParams struct {
+	BookID  int64 `json:"book_id"`
+	StoreID int64 `json:"store_id"`
+}
+
+func (q *Queries) GetSKUByBookAndStore(ctx context.Context, arg GetSKUByBookAndStoreParams) (Sku, error) {
+	row := q.db.QueryRow(ctx, getSKUByBookAndStore, arg.BookID, arg.StoreID)
+	var i Sku
+	err := row.Scan(
+		&i.ID,
+		&i.Uuid,
+		&i.BookID,
+		&i.StoreID,
+		&i.PriceInKopeks,
+		&i.StockCount,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const getSKUByUUID = `-- name: GetSKUByUUID :one
 SELECT s.id, s.uuid, s.book_id, s.store_id, s.price_in_kopeks, s.stock_count, s.created_at, s.updated_at, s.deleted_at, b.id, b.isbn, b.title, b.author, b.description, b.page_count, b.publication_year, b.created_at, b.updated_at, b.deleted_at
 FROM skus s
@@ -167,7 +197,7 @@ func (q *Queries) ListBookAvailability(ctx context.Context, bookID int64) ([]Lis
 	return items, nil
 }
 
-const listSKUsByStore = `-- name: ListSKUsByStore :many
+const listSKUsInStore = `-- name: ListSKUsInStore :many
 SELECT s.id, s.uuid, s.book_id, s.store_id, s.price_in_kopeks, s.stock_count, s.created_at, s.updated_at, s.deleted_at, b.id, b.isbn, b.title, b.author, b.description, b.page_count, b.publication_year, b.created_at, b.updated_at, b.deleted_at
 FROM skus s
          JOIN books b ON s.book_id = b.id
@@ -175,20 +205,20 @@ WHERE s.store_id = $1
   AND s.deleted_at IS NULL
 `
 
-type ListSKUsByStoreRow struct {
+type ListSKUsInStoreRow struct {
 	Sku  Sku  `json:"sku"`
 	Book Book `json:"book"`
 }
 
-func (q *Queries) ListSKUsByStore(ctx context.Context, storeID int64) ([]ListSKUsByStoreRow, error) {
-	rows, err := q.db.Query(ctx, listSKUsByStore, storeID)
+func (q *Queries) ListSKUsInStore(ctx context.Context, storeID int64) ([]ListSKUsInStoreRow, error) {
+	rows, err := q.db.Query(ctx, listSKUsInStore, storeID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListSKUsByStoreRow
+	var items []ListSKUsInStoreRow
 	for rows.Next() {
-		var i ListSKUsByStoreRow
+		var i ListSKUsInStoreRow
 		if err := rows.Scan(
 			&i.Sku.ID,
 			&i.Sku.Uuid,

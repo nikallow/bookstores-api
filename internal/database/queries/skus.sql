@@ -10,7 +10,14 @@ FROM skus s
 WHERE s.uuid = $1
   AND s.deleted_at IS NULL;
 
--- name: ListSKUsByStore :many
+-- name: GetSKUByBookAndStore :one
+SELECT *
+FROM skus
+WHERE book_id = $1
+  AND store_id = $2
+  AND deleted_at IS NULL;
+
+-- name: ListSKUsInStore :many
 SELECT sqlc.embed(s), sqlc.embed(b)
 FROM skus s
          JOIN books b ON s.book_id = b.id

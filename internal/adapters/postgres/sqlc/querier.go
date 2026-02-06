@@ -16,11 +16,12 @@ type Querier interface {
 	CreateSKU(ctx context.Context, arg CreateSKUParams) (Sku, error)
 	CreateStore(ctx context.Context, arg CreateStoreParams) (Store, error)
 	GetBookByID(ctx context.Context, id int64) (Book, error)
+	GetSKUByBookAndStore(ctx context.Context, arg GetSKUByBookAndStoreParams) (Sku, error)
 	GetSKUByUUID(ctx context.Context, uuid pgtype.UUID) (GetSKUByUUIDRow, error)
 	GetStoreByUUID(ctx context.Context, uuid pgtype.UUID) (Store, error)
 	ListBookAvailability(ctx context.Context, bookID int64) ([]ListBookAvailabilityRow, error)
 	ListBooks(ctx context.Context) ([]Book, error)
-	ListSKUsByStore(ctx context.Context, storeID int64) ([]ListSKUsByStoreRow, error)
+	ListSKUsInStore(ctx context.Context, storeID int64) ([]ListSKUsInStoreRow, error)
 	ListStores(ctx context.Context) ([]Store, error)
 	SearchBooks(ctx context.Context, query pgtype.Text) ([]Book, error)
 	SoftDeleteStore(ctx context.Context, uuid pgtype.UUID) error

@@ -13,6 +13,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	repo "github.com/nikallow/bookstores-api/internal/adapters/postgres/sqlc"
+	"github.com/nikallow/bookstores-api/internal/books"
 	"github.com/nikallow/bookstores-api/internal/config"
 	"github.com/nikallow/bookstores-api/internal/inventory"
 	"github.com/nikallow/bookstores-api/internal/logger"
@@ -57,12 +58,16 @@ func main() {
 	storeService := stores.NewService(dbQuerier)
 	storeHandler := stores.NewHandler(storeService)
 
-	inventoryService := inventory.NewService(dbQuerier)
+	booksService := books.NewService(dbQuerier)
+	booksHandler := books.NewHandler(booksService)
+
+	inventoryService := inventory.NewService(dbQuerier, conn)
 	inventoryHandler := inventory.NewHandler(inventoryService)
 
 	apiDeps := &APIDependencies{
 		Logger:           l,
 		StoreHandler:     storeHandler,
+		BooksHandler:     booksHandler,
 		InventoryHandler: inventoryHandler,
 	}
 
