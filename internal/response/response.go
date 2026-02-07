@@ -7,6 +7,10 @@ import (
 	"github.com/nikallow/bookstores-api/internal/middleware"
 )
 
+type ErrorResponse struct {
+	Error string `json:"error"`
+}
+
 func WriteJSON(w http.ResponseWriter, r *http.Request, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -16,5 +20,5 @@ func WriteJSON(w http.ResponseWriter, r *http.Request, status int, data any) {
 }
 
 func WriteError(w http.ResponseWriter, r *http.Request, status int, msg string) {
-	WriteJSON(w, r, status, map[string]string{"error": msg})
+	WriteJSON(w, r, status, ErrorResponse{Error: msg})
 }

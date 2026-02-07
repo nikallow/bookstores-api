@@ -11,6 +11,7 @@ import (
 	"github.com/nikallow/bookstores-api/internal/inventory"
 	appMiddleware "github.com/nikallow/bookstores-api/internal/middleware"
 	"github.com/nikallow/bookstores-api/internal/stores"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 type APIDependencies struct {
@@ -28,6 +29,10 @@ func MountAPI(deps *APIDependencies) http.Handler {
 	r.Use(appMiddleware.NewSlogLogger(deps.Logger))
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(60 * time.Second))
+
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"),
+	))
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")

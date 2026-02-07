@@ -25,7 +25,18 @@ func NewHandler(service Service) *Handler {
 	}
 }
 
-// CreateBook - POST /book
+// CreateBook
+//
+//	@Summary		Создать новую книгу
+//	@Description	Создаёт новую книгу в глобальном каталоге. Если книга с таким ISBN уже существует, обновляет ее данные.
+//	@Tags			books
+//	@Accept			json
+//	@Produce		json
+//	@Param			input	body		CreateBookRequest	true	"Данные для создания книги"
+//	@Success		201		{object}	BookResponse		"Инфо об книге"
+//	@Failure		400		{object}	response.ErrorResponse
+//	@Failure		500		{object}	response.ErrorResponse
+//	@Router			/books [post]
 func (h *Handler) CreateBook(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -48,10 +59,18 @@ func (h *Handler) CreateBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.WriteJSON(w, r, http.StatusCreated, toBookResponse(book))
+	response.WriteJSON(w, r, http.StatusCreated, ToBookResponse(book))
 }
 
-// ListBooks - GET /books
+// ListBooks
+//
+//	@Summary		Получить глобальный список книг
+//	@Description	Возвращает список всех книг в глобальном каталоге.
+//	@Tags			books
+//	@Produce		json
+//	@Success		200	{array}		BookResponse			"Список книг"
+//	@Failure		500	{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/books [get]
 func (h *Handler) ListBooks(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -64,13 +83,24 @@ func (h *Handler) ListBooks(w http.ResponseWriter, r *http.Request) {
 
 	resp := make([]BookResponse, len(books))
 	for i, b := range books {
-		resp[i] = toBookResponse(b)
+		resp[i] = ToBookResponse(b)
 	}
 
 	response.WriteJSON(w, r, http.StatusOK, resp)
 }
 
-// GetBook - GET /books/{bookID}
+// GetBook
+//
+//	@Summary		Получить инфо об одной книге
+//	@Description	Возвращает информацию о книге по её ID.
+//	@Tags			books
+//	@Produce		json
+//	@Param			bookID	path		int						true	"ID книги"
+//	@Success		200		{object}	BookResponse			"Инфо о книге"
+//	@Failure		400		{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		404		{object}	response.ErrorResponse	"Книга отсутствует"
+//	@Failure		500		{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/books/{bookID} [get]
 func (h *Handler) GetBook(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -93,10 +123,20 @@ func (h *Handler) GetBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.WriteJSON(w, r, http.StatusOK, toBookResponse(book))
+	response.WriteJSON(w, r, http.StatusOK, ToBookResponse(book))
 }
 
-// SearchBooks - GET /books/search?q=..
+// SearchBooks
+//
+//	@Summary		Поиск книг
+//	@Description	Ищет книги по части названия или имени автора.
+//	@Tags			books
+//	@Produce		json
+//	@Param			q	query		string					true	"Поисковый запрос"
+//	@Success		200	{array}		BookResponse			"Список найденных книг"
+//	@Failure		400	{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		500	{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/books/search [get]
 func (h *Handler) SearchBooks(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -116,13 +156,24 @@ func (h *Handler) SearchBooks(w http.ResponseWriter, r *http.Request) {
 
 	resp := make([]BookResponse, len(books))
 	for i, b := range books {
-		resp[i] = toBookResponse(b)
+		resp[i] = ToBookResponse(b)
 	}
 
 	response.WriteJSON(w, r, http.StatusOK, resp)
 }
 
-// GetBookAvailability - GET /books/{bookID}/availability
+// GetBookAvailability
+//
+//	@Summary		Доступность книги
+//	@Description	Показывает, в каких магазинах, по какой цене и в каком количестве доступна книга.
+//	@Tags			books
+//	@Produce		json
+//	@Param			bookID	path		int	true	"ID книги"
+//	@Success		200		{array}		AvailabilityResponse
+//	@Failure		400		{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		404		{object}	response.ErrorResponse	"Книга отсутствует"
+//	@Failure		500		{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/books/{bookID}/availability [get]
 func (h *Handler) GetBookAvailability(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -160,7 +211,7 @@ func (h *Handler) GetBookAvailability(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, r, http.StatusOK, resp)
 }
 
-func toBookResponse(book repo.Book) BookResponse {
+func ToBookResponse(book repo.Book) BookResponse {
 	resp := BookResponse{
 		ID:     book.ID,
 		Title:  book.Title,

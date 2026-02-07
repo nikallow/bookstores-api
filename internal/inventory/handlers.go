@@ -8,6 +8,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
+	repo "github.com/nikallow/bookstores-api/internal/adapters/postgres/sqlc"
+	"github.com/nikallow/bookstores-api/internal/books"
 	"github.com/nikallow/bookstores-api/internal/middleware"
 	"github.com/nikallow/bookstores-api/internal/response"
 )
@@ -24,7 +27,20 @@ func NewHandler(service Service) *Handler {
 	}
 }
 
-// CreateSKU - POST /skus
+// CreateSKU
+//
+//	@Summary		Создать SKU
+//	@Description	Создает новую товарную позицию (SKU), связывая книгу с магазином, ценой и остатком.
+//	@Tags			skus
+//	@Accept			json
+//	@Produce		json
+//	@Param			input	body		CreateSKURequest		true	"Данные для создания SKU"
+//	@Success		201		{object}	SKUResponse				"SKU успешно создан"
+//	@Failure		400		{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		404		{object}	response.ErrorResponse	"Книга или магазин не найдены"
+//	@Failure		409		{object}	response.ErrorResponse	"SKU для этой книги в этом магазине уже существует"
+//	@Failure		500		{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/skus [post]
 func (h *Handler) CreateSKU(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -55,10 +71,21 @@ func (h *Handler) CreateSKU(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.WriteJSON(w, r, http.StatusCreated, sku)
+	response.WriteJSON(w, r, http.StatusCreated, toSKUResponse(sku))
 }
 
-// GetSKU - GET /skus/{skuUUID}
+// GetSKU
+//
+//	@Summary		Получить SKU
+//	@Description	Возвращает детальную информацию о SKU (включая данные о книге) по его UUID.
+//	@Tags			skus
+//	@Produce		json
+//	@Param			skuUUID	path		string					true	"UUID товарной позиции (SKU)"
+//	@Success		200		{object}	SKUWithBookResponse		"Информация о SKU и связанной книге"
+//	@Failure		400		{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		404		{object}	response.ErrorResponse	"SKU не найден"
+//	@Failure		500		{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/skus/{skuUUID} [get]
 func (h *Handler) GetSKU(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -81,10 +108,23 @@ func (h *Handler) GetSKU(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.WriteJSON(w, r, http.StatusOK, sku)
+	response.WriteJSON(w, r, http.StatusOK, toSKUWithBookResponse(sku))
 }
 
-// UpdateSKUPrice - PUT /skus/{skuUUID}/price
+// UpdateSKUPrice
+//
+//	@Summary		Обновить цену SKU
+//	@Description	Устанавливает новую цену для существующей товарной позиции (SKU).
+//	@Tags			skus
+//	@Accept			json
+//	@Produce		json
+//	@Param			skuUUID	path		string					true	"UUID товарной позиции (SKU)"
+//	@Param			input	body		UpdateSKUPriceRequest	true	"Новая цена"
+//	@Success		200		{object}	SKUResponse				"Обновленный SKU"
+//	@Failure		400		{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		404		{object}	response.ErrorResponse	"SKU не найден"
+//	@Failure		500		{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/skus/{skuUUID}/price [put]
 func (h *Handler) UpdateSKUPrice(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -117,10 +157,24 @@ func (h *Handler) UpdateSKUPrice(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	response.WriteJSON(w, r, http.StatusOK, sku)
+	response.WriteJSON(w, r, http.StatusOK, toSKUResponse(sku))
 }
 
-// AdjustSKUStock - POST /skus/{skuUUID}/stock-adjustments
+// AdjustSKUStock
+//
+//	@Summary		Скорректировать остатки
+//	@Description	Увеличивает или уменьшает количество товара на складе. Для уменьшения используйте отрицательное значение.
+//	@Tags			skus
+//	@Accept			json
+//	@Produce		json
+//	@Param			skuUUID	path		string					true	"UUID товарной позиции (SKU)"
+//	@Param			input	body		AdjustSKUStockRequest	true	"Количество для изменения"
+//	@Success		200		{object}	SKUResponse				"Обновленный SKU"
+//	@Failure		400		{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		404		{object}	response.ErrorResponse	"SKU не найден"
+//	@Failure		409		{object}	response.ErrorResponse	"Недостаточно товара для списания"
+//	@Failure		500		{object}	response.ErrorResponse	"Internal error"
+//	@Router			/skus/{skuUUID}/stock-adjustments [post]
 func (h *Handler) AdjustSKUStock(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -157,5 +211,32 @@ func (h *Handler) AdjustSKUStock(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.WriteJSON(w, r, http.StatusOK, sku)
+	response.WriteJSON(w, r, http.StatusOK, toSKUResponse(sku))
+}
+
+func toSKUResponse(sku repo.Sku) SKUResponse {
+	return SKUResponse{
+		ID:            sku.ID,
+		UUID:          mustConvertUUID(sku.Uuid),
+		BookID:        sku.BookID,
+		StoreID:       sku.StoreID,
+		PriceInKopeks: sku.PriceInKopeks,
+		StockCount:    sku.StockCount,
+		CreatedAt:     sku.CreatedAt.Time,
+		UpdatedAt:     sku.UpdatedAt.Time,
+	}
+}
+
+func toSKUWithBookResponse(row repo.GetSKUByUUIDRow) SKUWithBookResponse {
+	return SKUWithBookResponse{
+		SKU:  toSKUResponse(row.Sku),
+		Book: books.ToBookResponse(row.Book),
+	}
+}
+
+func mustConvertUUID(pgUUID pgtype.UUID) uuid.UUID {
+	if !pgUUID.Valid {
+		return uuid.Nil
+	}
+	return pgUUID.Bytes
 }

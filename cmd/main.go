@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	_ "github.com/nikallow/bookstores-api/docs"
 	repo "github.com/nikallow/bookstores-api/internal/adapters/postgres/sqlc"
 	"github.com/nikallow/bookstores-api/internal/books"
 	"github.com/nikallow/bookstores-api/internal/config"
@@ -20,6 +21,11 @@ import (
 	"github.com/nikallow/bookstores-api/internal/stores"
 )
 
+// @title			Bookstores API
+// @version		1.0
+// @description	Это REST API для сервиса сети книжных магазинов.
+// @host			localhost:8080
+// @BasePath		/
 func main() {
 	// Config
 	configPath := os.Getenv("CONFIG_PATH")

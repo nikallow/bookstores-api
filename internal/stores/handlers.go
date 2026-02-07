@@ -24,7 +24,18 @@ func NewHandler(service Service) *Handler {
 	}
 }
 
-// CreateStore - POST /stores
+// CreateStore
+//
+//	@Summary		Создать новый магазин
+//	@Description	Создаёт новую запись о магазине в базе данных.
+//	@Tags			stores
+//	@Accept			json
+//	@Produce		json
+//	@Param			input	body		CreateStoreRequest		true	"Данные для создания магазина"
+//	@Success		201		{object}	StoreResponse			"Магазин успешно создан"
+//	@Failure		400		{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		500		{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/stores [post]
 func (h *Handler) CreateStore(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -55,7 +66,15 @@ func (h *Handler) CreateStore(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, r, http.StatusCreated, resp)
 }
 
-// ListStores - GET /stores
+// ListStores
+//
+//	@Summary		Получить список магазинов
+//	@Description	Возвращает список всех действующих магазинов.
+//	@Tags			stores
+//	@Produce		json
+//	@Success		200	{array}		StoreResponse			"Список действующих магазинов"
+//	@Failure		500	{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/stores [get]
 func (h *Handler) ListStores(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -78,7 +97,18 @@ func (h *Handler) ListStores(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, r, http.StatusOK, resp)
 }
 
-// GetStore - GET /stores/{storeUUID}
+// GetStore
+//
+//	@Summary		Получить информацию об одном магазине
+//	@Description	Возвращает детальную информацию о магазине по его UUID.
+//	@Tags			stores
+//	@Produce		json
+//	@Param			storeUUID	path		string					true	"UUID магазина"
+//	@Success		200			{object}	StoreResponse			"Инфо о найденном магазине"
+//	@Failure		400			{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		404			{object}	response.ErrorResponse	"Искомый магазин отсутствует"
+//	@Failure		500			{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/stores/{storeUUID} [get]
 func (h *Handler) GetStore(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -109,7 +139,19 @@ func (h *Handler) GetStore(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, r, http.StatusOK, resp)
 }
 
-// UpdateStore - PUT /stores/{storeUUID}
+// UpdateStore
+//
+//	@Summary		Обновить информацию о магазине
+//	@Description	Обнавляет запись о магазине в базе данных.
+//	@Tags			stores
+//	@Accept			json
+//	@Produce		json
+//	@Param			storeUUID	path		string					true	"UUID магазина"
+//	@Param			input		body		UpdateStoreRequest		true	"Данные для обновления информации о магазине"
+//	@Success		200			{object}	StoreResponse			"Обновлённое инфо об обновлённом магазине"
+//	@Failure		400			{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		500			{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/stores/{storeUUID} [put]
 func (h *Handler) UpdateStore(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 
@@ -153,7 +195,16 @@ func (h *Handler) UpdateStore(w http.ResponseWriter, r *http.Request) {
 	response.WriteJSON(w, r, http.StatusOK, resp)
 }
 
-// DeleteStore - DELETE /stores/{storeUUID}
+// DeleteStore
+//
+//	@Summary		Удалить магазин из доступных
+//	@Description	Выполняет мягкое удаление магазина
+//	@Tags			stores
+//	@Param			storeUUID	path	string	true	"UUID магазина"
+//	@Success		204			"Магазин удалён (деактивирован)"
+//	@Failure		400			{object}	response.ErrorResponse	"Bad request error"
+//	@Failure		500			{object}	response.ErrorResponse	"Internal server error"
+//	@Router			/stores/{storeUUID} [delete]
 func (h *Handler) DeleteStore(w http.ResponseWriter, r *http.Request) {
 	log := middleware.LoggerFromContext(r.Context())
 

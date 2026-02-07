@@ -1,0 +1,578 @@
+basePath: /
+definitions:
+  books.AvailabilityResponse:
+    properties:
+      price_in_kopeks:
+        type: integer
+      sku_uuid:
+        type: string
+      stock_count:
+        type: integer
+      store_name:
+        type: string
+      store_uuid:
+        type: string
+    type: object
+  books.BookResponse:
+    properties:
+      author:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      isbn:
+        type: string
+      page_count:
+        type: integer
+      publication_year:
+        type: integer
+      title:
+        type: string
+    type: object
+  books.CreateBookRequest:
+    properties:
+      author:
+        type: string
+      description:
+        type: string
+      isbn:
+        type: string
+      page_count:
+        type: integer
+      publication_year:
+        type: integer
+      title:
+        type: string
+    required:
+      - author
+      - isbn
+      - title
+    type: object
+  inventory.AdjustSKUStockRequest:
+    properties:
+      change_by:
+        type: integer
+      comment:
+        type: string
+    type: object
+  inventory.CreateSKURequest:
+    properties:
+      book_id:
+        type: integer
+      price_in_kopeks:
+        minimum: 0
+        type: integer
+      stock_count:
+        minimum: 0
+        type: integer
+      store_uuid:
+        type: string
+    required:
+      - book_id
+      - store_uuid
+    type: object
+  inventory.SKUResponse:
+    properties:
+      book_id:
+        type: integer
+      created_at:
+        type: string
+      price_in_kopeks:
+        type: integer
+      stock_count:
+        type: integer
+      store_id:
+        type: integer
+      updated_at:
+        type: string
+      uuid:
+        type: string
+    type: object
+  inventory.SKUWithBookResponse:
+    properties:
+      book:
+        $ref: '#/definitions/books.BookResponse'
+      sku:
+        $ref: '#/definitions/inventory.SKUResponse'
+    type: object
+  inventory.UpdateSKUPriceRequest:
+    properties:
+      new_price_in_kopeks:
+        minimum: 0
+        type: integer
+    type: object
+  response.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  stores.CreateStoreRequest:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+    required:
+      - address
+      - name
+    type: object
+  stores.StoreResponse:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+      uuid:
+        type: string
+    type: object
+  stores.UpdateStoreRequest:
+    properties:
+      address:
+        type: string
+      name:
+        type: string
+    required:
+      - address
+      - name
+    type: object
+host: localhost:8080
+info:
+  contact: { }
+  description: Это REST API для сервиса сети книжных магазинов.
+  title: Bookstores API
+  version: "1.0"
+paths:
+  /books:
+    get:
+      description: Возвращает список всех книг в глобальном каталоге.
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Список книг
+          schema:
+            items:
+              $ref: '#/definitions/books.BookResponse'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получить глобальный список книг
+      tags:
+        - books
+    post:
+      consumes:
+        - application/json
+      description: Создаёт новую книгу в глобальном каталоге. Если книга с таким ISBN
+        уже существует, обновляет ее данные.
+      parameters:
+        - description: Данные для создания книги
+          in: body
+          name: input
+          required: true
+          schema:
+            $ref: '#/definitions/books.CreateBookRequest'
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: Инфо об книге
+          schema:
+            $ref: '#/definitions/books.BookResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Создать новую книгу
+      tags:
+        - books
+  /books/{bookID}:
+    get:
+      description: Возвращает информацию о книге по её ID.
+      parameters:
+        - description: ID книги
+          in: path
+          name: bookID
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Инфо о книге
+          schema:
+            $ref: '#/definitions/books.BookResponse'
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Книга отсутствует
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получить одну книгу
+      tags:
+        - books
+  /books/{bookID}/availability:
+    get:
+      description: Показывает, в каких магазинах, по какой цене и в каком количестве
+        доступна книга.
+      parameters:
+        - description: ID книги
+          in: path
+          name: bookID
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/books.AvailabilityResponse'
+            type: array
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Книга отсутствует
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Доступность книги
+      tags:
+        - books
+  /books/search:
+    get:
+      description: Ищет книги по части названия или имени автора.
+      parameters:
+        - description: Поисковый запрос
+          in: query
+          name: q
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Список найденных книг
+          schema:
+            items:
+              $ref: '#/definitions/books.BookResponse'
+            type: array
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Поиск книг
+      tags:
+        - books
+  /skus:
+    post:
+      consumes:
+        - application/json
+      description: Создает новую товарную позицию (SKU), связывая книгу с магазином,
+        ценой и остатком.
+      parameters:
+        - description: Данные для создания SKU
+          in: body
+          name: input
+          required: true
+          schema:
+            $ref: '#/definitions/inventory.CreateSKURequest'
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: SKU успешно создан
+          schema:
+            $ref: '#/definitions/inventory.SKUResponse'
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Книга или магазин не найдены
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: SKU для этой книги в этом магазине уже существует
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Создать SKU
+      tags:
+        - skus
+  /skus/{skuUUID}:
+    get:
+      description: Возвращает детальную информацию о SKU (включая данные о книге)
+        по его UUID.
+      parameters:
+        - description: UUID товарной позиции (SKU)
+          in: path
+          name: skuUUID
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Информация о SKU и связанной книге
+          schema:
+            $ref: '#/definitions/inventory.SKUWithBookResponse'
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: SKU не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получить SKU
+      tags:
+        - skus
+  /skus/{skuUUID}/price:
+    put:
+      consumes:
+        - application/json
+      description: Устанавливает новую цену для существующей товарной позиции (SKU).
+      parameters:
+        - description: UUID товарной позиции (SKU)
+          in: path
+          name: skuUUID
+          required: true
+          type: string
+        - description: Новая цена
+          in: body
+          name: input
+          required: true
+          schema:
+            $ref: '#/definitions/inventory.UpdateSKUPriceRequest'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Обновленный SKU
+          schema:
+            $ref: '#/definitions/inventory.SKUResponse'
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: SKU не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Обновить цену SKU
+      tags:
+        - skus
+  /skus/{skuUUID}/stock-adjustments:
+    post:
+      consumes:
+        - application/json
+      description: Увеличивает или уменьшает количество товара на складе. Для уменьшения
+        используйте отрицательное значение.
+      parameters:
+        - description: UUID товарной позиции (SKU)
+          in: path
+          name: skuUUID
+          required: true
+          type: string
+        - description: Количество для изменения
+          in: body
+          name: input
+          required: true
+          schema:
+            $ref: '#/definitions/inventory.AdjustSKUStockRequest'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Обновленный SKU
+          schema:
+            $ref: '#/definitions/inventory.SKUResponse'
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: SKU не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "409":
+          description: Недостаточно товара для списания
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Скорректировать остатки
+      tags:
+        - skus
+  /stores:
+    get:
+      description: Возвращает список всех действующих магазинов.
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Список действующих магазинов
+          schema:
+            items:
+              $ref: '#/definitions/stores.StoreResponse'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получить список магазинов
+      tags:
+        - stores
+    post:
+      consumes:
+        - application/json
+      description: Создаёт новую запись о магазине в базе данных.
+      parameters:
+        - description: Данные для создания магазина
+          in: body
+          name: input
+          required: true
+          schema:
+            $ref: '#/definitions/stores.CreateStoreRequest'
+      produces:
+        - application/json
+      responses:
+        "201":
+          description: Магазин успешно создан
+          schema:
+            $ref: '#/definitions/stores.StoreResponse'
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Создать новый магазин
+      tags:
+        - stores
+  /stores/{storeUUID}:
+    delete:
+      description: Выполняет мягкое удаление магазина
+      parameters:
+        - description: UUID магазина
+          in: path
+          name: storeUUID
+          required: true
+          type: string
+      responses:
+        "204":
+          description: Магазин удалён (деактивирован)
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Удалить магазин из доступных
+      tags:
+        - stores
+    get:
+      description: Возвращает детальную информацию о магазине по его UUID.
+      parameters:
+        - description: UUID магазина
+          in: path
+          name: storeUUID
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Инфо о найденном магазине
+          schema:
+            $ref: '#/definitions/stores.StoreResponse'
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Искомый магазин отсутствует
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Получить информацию об одном магазине
+      tags:
+        - stores
+    put:
+      consumes:
+        - application/json
+      description: Обнавляет запись о магазине в базе данных.
+      parameters:
+        - description: UUID магазина
+          in: path
+          name: storeUUID
+          required: true
+          type: string
+        - description: Данные для обновления информации о магазине
+          in: body
+          name: input
+          required: true
+          schema:
+            $ref: '#/definitions/stores.UpdateStoreRequest'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Обновлённое инфо об обновлённом магазине
+          schema:
+            $ref: '#/definitions/stores.StoreResponse'
+        "400":
+          description: Bad request error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+      summary: Обновить информацию о магазине
+      tags:
+        - stores
+swagger: "2.0"
